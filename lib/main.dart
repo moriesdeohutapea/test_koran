@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:test_koran/second_screen.dart';
-import 'package:test_koran/ui.dart';
+import 'package:test_koran/first_screen.dart';
+
+import 'custom_button.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,30 +32,29 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
+            CustomButton(
+              label: 'Tes Koran',
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TestScreen()),
                 );
               },
-              child: const Text('Tes Koran'),
+              isEnabled: true,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            CustomButton(
+              label: 'Tes Ganjil/Genap',
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          const OddEvenTestScreen()), // Tanpa const
+                  MaterialPageRoute(builder: (context) => const OddEvenTestScreen()),
                 );
               },
-              child: const Text('Tes Ganjil/Genap'),
+              isEnabled: true,
             ),
           ],
         ),
       ),
     );
-  }
-}
+  }}

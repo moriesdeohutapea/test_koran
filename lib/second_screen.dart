@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'custom_button.dart';
+
 class OddEvenTestScreen extends StatefulWidget {
   const OddEvenTestScreen({super.key});
 
@@ -12,36 +14,41 @@ class OddEvenTestScreen extends StatefulWidget {
 
 class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
   late String _currentQuestion;
-  late bool
-      _isAnswerEven; // True jika jawaban benar adalah genap, false jika ganjil
+  late bool _isAnswerEven;
   int _scoreBenar = 0;
   int _scoreSalah = 0;
-  int _remainingTime = 60;
+  int _remainingTime = 60; // Default 1 menit
   Timer? _timer;
+  bool _timerStarted =
+      false; // Menambahkan indikator apakah timer sudah dimulai
+  final Map<String, int> _timeOptions = {
+    '1 Menit': 60,
+    '1.5 Menit': 90,
+    '2 Menit': 120,
+  };
+  String _selectedTime = '1 Menit';
 
   @override
   void initState() {
     super.initState();
-    _generateQuestion(); // Membuat pertanyaan awal
-    _startTimer();
+    _generateQuestion();
   }
 
-  // Fungsi untuk memulai timer
   void _startTimer() {
-    // Pastikan untuk membatalkan timer sebelumnya jika ada
+    if (_timer != null && _timer!.isActive) return;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingTime > 0) {
-          _remainingTime--;
-        } else {
-          _endTest();
-        }
-      });
+      if (_remainingTime > 0) {
+        setState(() => _remainingTime--);
+      } else {
+        _endTest();
+      }
+    });
+    setState(() {
+      _timerStarted = true; // Set timer telah dimulai
     });
   }
 
-  // Fungsi untuk menghentikan timer dan menampilkan hasil akhir
   void _endTest() {
     _timer?.cancel();
     showDialog(
@@ -62,29 +69,27 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
     );
   }
 
-  // Fungsi untuk reset nilai awal
   void _resetTest() {
+    _timer?.cancel(); // Memastikan timer dihentikan saat reset
     setState(() {
+      _timerStarted = false; // Reset status timer
       _scoreBenar = 0;
       _scoreSalah = 0;
-      _remainingTime = 60;
+      _remainingTime = _timeOptions[_selectedTime]!;
       _generateQuestion();
     });
-    _startTimer();
   }
 
-  // Fungsi untuk membuat pertanyaan penjumlahan dan menentukan apakah jawaban ganjil/genap
   void _generateQuestion() {
     final random = Random();
-    int angka1 = random.nextInt(10); // angka acak antara 0-9
-    int angka2 = random.nextInt(10); // angka acak antara 0-9
+    int angka1 = random.nextInt(10);
+    int angka2 = random.nextInt(10);
     int jawaban = angka1 + angka2;
 
     _currentQuestion = '$angka1 + $angka2 = ?';
     _isAnswerEven = jawaban % 2 == 0;
   }
 
-  // Fungsi untuk memeriksa apakah pilihan pengguna benar atau salah
   void _checkAnswer(bool isEvenSelected) {
     setState(() {
       if (isEvenSelected == _isAnswerEven) {
@@ -92,14 +97,15 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
       } else {
         _scoreSalah++;
       }
-      _generateQuestion(); // Membuat pertanyaan baru setelah jawaban
+      _generateQuestion();
     });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  void _updateTimeSetting(String newValue) {
+    setState(() {
+      _selectedTime = newValue;
+      _remainingTime = _timeOptions[newValue]!;
+    });
   }
 
   @override
@@ -109,43 +115,63 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              _currentQuestion,
-              style: const TextStyle(fontSize: 24),
-              textAlign: TextAlign.center,
+            DropdownButton<String>(
+              value: _selectedTime,
+              onChanged: (String? newValue) {
+                if (newValue != null) _updateTimeSetting(newValue);
+              },
+              items: _timeOptions.keys
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
-            const SizedBox(height: 20),
-            // Menampilkan waktu yang tersisa
-            Text('Waktu: $_remainingTime detik',
-                style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 20),
-            // Dua tombol untuk memilih Ganjil atau Genap
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () => _checkAnswer(false), // False untuk Ganjil
-                  child: const Text('Ganjil'),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () => _checkAnswer(true), // True untuk Genap
-                  child: const Text('Genap'),
-                ),
-              ],
+            CustomButton(
+              label: 'Start',
+              onPressed: _startTimer,
+              isEnabled: true,
             ),
-            const SizedBox(height: 20),
-            // Menampilkan skor benar dan salah
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Text('Benar: $_scoreBenar',
-                    style: const TextStyle(fontSize: 18)),
-                Text('Salah: $_scoreSalah',
-                    style: const TextStyle(fontSize: 18)),
-              ],
+            CustomButton(
+              label: 'Reset',
+              onPressed: _resetTest,
+              isEnabled: true,
+            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _currentQuestion,
+                    style: const TextStyle(fontSize: 24),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Waktu: $_remainingTime detik',
+                      style: const TextStyle(fontSize: 18)),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CustomButton(
+                        label: 'Ganjil',
+                        onPressed:
+                            _timerStarted ? () => _checkAnswer(false) : null,
+                        isEnabled: _timerStarted,
+                      ),
+                      const SizedBox(width: 20),
+                      CustomButton(
+                        label: 'Genap',
+                        onPressed:
+                            _timerStarted ? () => _checkAnswer(true) : null,
+                        isEnabled: _timerStarted,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
