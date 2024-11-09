@@ -1,10 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:test_koran/second_screen.dart';
-import 'package:test_koran/first_screen.dart';
 
-import 'custom_button.dart';
+import 'auth_service.dart';
+import 'firebase_options.dart';
+import 'home_screen.dart';
+import 'login_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -15,46 +21,55 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Aplikasi Tes',
-      home: HomeScreen(),
+      title: 'Aplikasi Tes Koran',
+      home: InitialScreen(),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class InitialScreen extends StatefulWidget {
+  const InitialScreen({super.key});
+
+  @override
+  _InitialScreenState createState() => _InitialScreenState();
+}
+
+class _InitialScreenState extends State<InitialScreen> {
+  final AuthService _authService = AuthService();
+  bool isLoading = true;
+  bool isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final loggedIn = await _authService.isUserLoggedIn();
+    setState(() {
+      isLoggedIn = loggedIn;
+      isLoading = false;
+    });
+    if (loggedIn) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pilih Tes')),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CustomButton(
-              label: 'Tes Koran',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TestScreen()),
-                );
-              },
-              isEnabled: true,
-            ),
-            const SizedBox(height: 20),
-            CustomButton(
-              label: 'Tes Ganjil/Genap',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const OddEvenTestScreen()),
-                );
-              },
-              isEnabled: true,
-            ),
-          ],
-        ),
+        child: isLoading ? const CircularProgressIndicator() : Container(),
       ),
     );
-  }}
+  }
+}

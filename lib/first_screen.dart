@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:test_koran/test_result_screen.dart';
 
+import 'auth_service.dart';
 import 'custom_button.dart';
+import 'fire_store_service.dart';
 
 class TestScreen extends StatefulWidget {
   const TestScreen({super.key});
@@ -14,30 +18,27 @@ class TestScreen extends StatefulWidget {
 }
 
 class _TestScreenState extends State<TestScreen> {
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+  final AuthService _authService = AuthService();
   final AudioPlayer _audioPlayer = AudioPlayer();
   late String _currentQuestion;
   late bool _isAnswerCorrect;
   int _scoreCorrect = 0;
   int _scoreWrong = 0;
   int _remainingTime = 60;
+  double _accuracy = 0.0;
   Timer? _timer;
   bool _isTestActive = false;
+  String _selectedTime = '1 Menit';
+  final List<int> _answerTimes = [];
+  DateTime? _questionStartTime;
+
   final Map<String, int> _timeOptions = {
     '30 Detik': 30,
     '1 Menit': 60,
     '1.5 Menit': 90,
     '2 Menit': 120,
   };
-  String _selectedTime = '1 Menit';
-
-  Future<void> _playSound() async {
-    try {
-      await _audioPlayer.stop();
-      await _audioPlayer.play(AssetSource('microwave_button.mp3'));
-    } catch (e) {
-      print("Error playing sound: $e");
-    }
-  }
 
   @override
   void initState() {
@@ -47,11 +48,12 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   void _startTest() {
-    if (!_isTestActive) {
+    if (_isTestActive) return;
+    setState(() {
       _isTestActive = true;
       _remainingTime = _timeOptions[_selectedTime]!;
-      _startTimer();
-    }
+    });
+    _startTimer();
   }
 
   void _startTimer() {
@@ -67,12 +69,101 @@ class _TestScreenState extends State<TestScreen> {
 
   void _endTest() {
     _timer?.cancel();
-    setState(() => _isTestActive = false);
+    setState(() {
+      _isTestActive = false;
+      _accuracy = _calculateAccuracy();
+    });
+    _logTestResult();
+    _showTestResultsDialog();
+  }
+
+  void _resetTest() {
+    _timer?.cancel();
+    setState(() {
+      _isTestActive = false;
+      _scoreCorrect = 0;
+      _scoreWrong = 0;
+      _accuracy = 0.0;
+      _remainingTime = _timeOptions[_selectedTime]!;
+      _answerTimes.clear();
+    });
+    _generateQuestion();
+  }
+
+  void _generateQuestion() {
+    final random = Random();
+    final number1 = random.nextInt(10);
+    final number2 = random.nextInt(10);
+    final answer = number1 + number2;
+    _isAnswerCorrect = answer % 2 == 0;
+    _currentQuestion = "$number1 + $number2 = ?";
+    _questionStartTime = DateTime.now();
+  }
+
+  void _checkAnswer(bool isEvenSelected) {
+    if (!_isTestActive) return;
+    _answerTimes.add(DateTime.now().difference(_questionStartTime!).inSeconds);
+    setState(() {
+      if (isEvenSelected == _isAnswerCorrect) {
+        _scoreCorrect++;
+      } else {
+        _scoreWrong++;
+      }
+      _generateQuestion();
+    });
+  }
+
+  double _calculateAverageResponseTime() {
+    if (_answerTimes.isEmpty) return 0;
+    return _answerTimes.reduce((a, b) => a + b) / _answerTimes.length;
+  }
+
+  double _calculateAccuracy() {
+    if (_scoreCorrect + _scoreWrong == 0) return 0;
+    final accuracyScore = (_scoreCorrect / (_scoreCorrect + _scoreWrong)) * 100;
+    return (accuracyScore - _calculateAverageResponseTime()).clamp(0, 100);
+  }
+
+  Future<void> _logTestResult() async {
+    final userId = _authService.getCurrentUserId();
+    if (userId != null) {
+      await FirestoreService().addDataToList(
+        collection: 'users',
+        documentId: userId,
+        field: 'testResults',
+        data: {
+          'score_correct': _scoreCorrect,
+          'score_wrong': _scoreWrong,
+          'average_response_time': _calculateAverageResponseTime(),
+          'accuracy': _accuracy,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+      await _analytics.logEvent(
+        name: 'test_result',
+        parameters: {
+          'user_id': userId,
+          'score_correct': _scoreCorrect,
+          'score_wrong': _scoreWrong,
+          'selected_time': _selectedTime,
+          'average_response_time': _calculateAverageResponseTime(),
+          'accuracy': _accuracy,
+        },
+      );
+    }
+  }
+
+  void _showTestResultsDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Time’s Up!'),
-        content: Text('Correct: $_scoreCorrect\nWrong: $_scoreWrong'),
+        content: Text(
+          'Correct: $_scoreCorrect\n'
+          'Wrong: $_scoreWrong\n'
+          'Average Response Time: ${_calculateAverageResponseTime().toStringAsFixed(2)} seconds\n'
+          'Accuracy: ${_accuracy.toStringAsFixed(2)}%',
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -86,50 +177,20 @@ class _TestScreenState extends State<TestScreen> {
     );
   }
 
-  void _resetTest() {
-    _timer?.cancel();
-    setState(() {
-      _isTestActive = false;
-      _scoreCorrect = 0;
-      _scoreWrong = 0;
-      _remainingTime = _timeOptions[_selectedTime]!;
-      _generateQuestion();
-    });
-  }
-
-  void _generateQuestion() {
-    final random = Random();
-    int number1 = random.nextInt(10);
-    int number2 = random.nextInt(10);
-    int answer = number1 + number2;
-    _isAnswerCorrect = answer % 2 == 0; // True if even, false if odd
-    _currentQuestion = "$number1 + $number2 = ?";
-  }
-
-  void _checkAnswer(bool isEvenSelected) {
-    if (!_isTestActive) return;
-    setState(() {
-      if (isEvenSelected == _isAnswerCorrect) {
-        _scoreCorrect++;
-      } else {
-        _scoreWrong++;
-      }
-      _generateQuestion(); // Generate a new question after answering
-    });
-  }
-
   Widget _buildNumberButton(int number) {
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: CustomButton(
-        label: '$number',
-        onPressed: () {
-          if (_isTestActive) {
-            _checkAnswer(number % 2 == 0);
-            _playSound();
-          }
-        },
-        isEnabled: _isTestActive,
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: CustomButton(
+          label: '$number',
+          onPressed: () {
+            if (_isTestActive) {
+              _checkAnswer(number % 2 == 0);
+            }
+          },
+          isEnabled: _isTestActive,
+          isRounded: false,
+        ),
       ),
     );
   }
@@ -143,6 +204,18 @@ class _TestScreenState extends State<TestScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            CustomButton(
+              label: "Riwayat Hasil",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const TestResultsScreen(collectionField: 'testResults'),
+                  ),
+                );
+              },
+            ),
             DropdownButton<String>(
               value: _selectedTime,
               onChanged: (String? newValue) {
@@ -180,40 +253,25 @@ class _TestScreenState extends State<TestScreen> {
             ),
             const SizedBox(height: 20),
             Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildNumberButton(1),
-                    _buildNumberButton(2),
-                    _buildNumberButton(3),
+              children: List.generate(3, (row) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(3, (col) {
+                        final number = row * 3 + col + 1;
+                        return _buildNumberButton(number);
+                      }),
+                    );
+                  }) +
+                  [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Spacer(),
+                        _buildNumberButton(0),
+                        const Spacer(),
+                      ],
+                    )
                   ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildNumberButton(4),
-                    _buildNumberButton(5),
-                    _buildNumberButton(6),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildNumberButton(7),
-                    _buildNumberButton(8),
-                    _buildNumberButton(9),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Spacer(),
-                    _buildNumberButton(0),
-                    Spacer(),
-                  ],
-                ),
-              ],
             ),
             const SizedBox(height: 20),
             Row(

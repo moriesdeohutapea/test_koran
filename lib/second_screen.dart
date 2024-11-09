@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:test_koran/test_result_screen.dart';
 
+import 'auth_service.dart';
 import 'custom_button.dart';
 
 class OddEvenTestScreen extends StatefulWidget {
@@ -13,15 +16,21 @@ class OddEvenTestScreen extends StatefulWidget {
 }
 
 class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+  final AuthService _authService = AuthService();
   late String _currentQuestion;
   late bool _isAnswerEven;
   int _scoreBenar = 0;
   int _scoreSalah = 0;
-  int _remainingTime = 60; // Default 1 menit
+  int _remainingTime = 60;
   Timer? _timer;
-  bool _timerStarted =
-      false; // Menambahkan indikator apakah timer sudah dimulai
+  bool _timerStarted = false;
+  final List<int> _answerTimes = [];
+  DateTime? _questionStartTime;
+  double _accuracy = 0.0;
+
   final Map<String, int> _timeOptions = {
+    '30 Detik': 30,
     '1 Menit': 60,
     '1.5 Menit': 90,
     '2 Menit': 120,
@@ -34,28 +43,22 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
     _generateQuestion();
   }
 
-  void _startTimer() {
-    if (_timer != null && _timer!.isActive) return;
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingTime > 0) {
-        setState(() => _remainingTime--);
-      } else {
-        _endTest();
-      }
-    });
-    setState(() {
-      _timerStarted = true; // Set timer telah dimulai
-    });
-  }
-
   void _endTest() {
     _timer?.cancel();
+    _accuracy = _calculateAccuracy(); // Hitung akurasi sebelum disimpan
+
+    _logTestResult(); // Simpan hasil tes, termasuk akurasi
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Waktu Habis!'),
-        content: Text('Benar: $_scoreBenar\nSalah: $_scoreSalah'),
+        content: Text(
+          'Benar: $_scoreBenar\n'
+          'Salah: $_scoreSalah\n'
+          'Average Response Time: ${_calculateAverageResponseTime().toStringAsFixed(2)} detik\n'
+          'Accuracy: ${_accuracy.toStringAsFixed(2)}%',
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -69,13 +72,51 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
     );
   }
 
-  void _resetTest() {
-    _timer?.cancel(); // Memastikan timer dihentikan saat reset
+  Future<void> _logTestResult() async {
+    final averageResponseTime = _calculateAverageResponseTime();
+    _authService.logOddEvenTestResult(
+      scoreCorrect: _scoreBenar,
+      scoreWrong: _scoreSalah,
+      selectedTime: _selectedTime,
+      averageResponseTime: averageResponseTime,
+      accuracy: _accuracy, // Pastikan accuracy dipass saat log hasil tes
+    );
+  }
+
+  void _toScreenResult() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const TestResultsScreen(collectionField: 'oddEvenTestResults'),
+      ),
+    );
+  }
+
+  void _startTimer() {
+    if (_timer != null && _timer!.isActive) return;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingTime > 0) {
+        setState(() => _remainingTime--);
+      } else {
+        _endTest();
+      }
+    });
     setState(() {
-      _timerStarted = false; // Reset status timer
+      _timerStarted = true;
+    });
+  }
+
+  void _resetTest() {
+    _timer?.cancel();
+    setState(() {
+      _timerStarted = false;
       _scoreBenar = 0;
       _scoreSalah = 0;
       _remainingTime = _timeOptions[_selectedTime]!;
+      _answerTimes.clear();
+      _accuracy = 0.0;
       _generateQuestion();
     });
   }
@@ -88,9 +129,15 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
 
     _currentQuestion = '$angka1 + $angka2 = ?';
     _isAnswerEven = jawaban % 2 == 0;
+    _questionStartTime = DateTime.now();
   }
 
   void _checkAnswer(bool isEvenSelected) {
+    if (!_timerStarted) return;
+
+    final answerTime = DateTime.now().difference(_questionStartTime!).inSeconds;
+    _answerTimes.add(answerTime);
+
     setState(() {
       if (isEvenSelected == _isAnswerEven) {
         _scoreBenar++;
@@ -99,6 +146,17 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
       }
       _generateQuestion();
     });
+  }
+
+  double _calculateAverageResponseTime() {
+    if (_answerTimes.isEmpty) return 0;
+    return _answerTimes.reduce((a, b) => a + b) / _answerTimes.length;
+  }
+
+  double _calculateAccuracy() {
+    if (_scoreBenar + _scoreSalah == 0) return 0;
+    final correctRatio = (_scoreBenar / (_scoreBenar + _scoreSalah)) * 100;
+    return (correctRatio - _calculateAverageResponseTime()).clamp(0, 100);
   }
 
   void _updateTimeSetting(String newValue) {
@@ -130,6 +188,10 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
               }).toList(),
             ),
             CustomButton(
+              label: "Riwayat Hasil",
+              onPressed: _toScreenResult,
+            ),
+            CustomButton(
               label: 'Start',
               onPressed: _startTimer,
               isEnabled: true,
@@ -153,20 +215,25 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
                       style: const TextStyle(fontSize: 18)),
                   const SizedBox(height: 20),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CustomButton(
-                        label: 'Ganjil',
-                        onPressed:
-                            _timerStarted ? () => _checkAnswer(false) : null,
-                        isEnabled: _timerStarted,
+                      Expanded(
+                        child: CustomButton(
+                          label: 'Ganjil',
+                          onPressed:
+                              _timerStarted ? () => _checkAnswer(false) : null,
+                          isEnabled: _timerStarted,
+                          isRounded: false,
+                        ),
                       ),
-                      const SizedBox(width: 20),
-                      CustomButton(
-                        label: 'Genap',
-                        onPressed:
-                            _timerStarted ? () => _checkAnswer(true) : null,
-                        isEnabled: _timerStarted,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: CustomButton(
+                          label: 'Genap',
+                          onPressed:
+                              _timerStarted ? () => _checkAnswer(true) : null,
+                          isEnabled: _timerStarted,
+                          isRounded: false,
+                        ),
                       ),
                     ],
                   ),

@@ -4,12 +4,14 @@ class CustomButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool isEnabled;
+  final bool isRounded;
 
   const CustomButton({
     super.key,
     required this.label,
     this.onPressed,
     this.isEnabled = true,
+    this.isRounded = true,
   });
 
   @override
@@ -20,18 +22,24 @@ class CustomButton extends StatelessWidget {
         backgroundColor: MaterialStateProperty.resolveWith<Color>(
           (Set<MaterialState> states) {
             if (states.contains(MaterialState.disabled)) {
-              return Colors.grey; // Disable color
+              return Colors.grey;
             }
-            return Theme.of(context).primaryColor; // Default color
+            return Theme.of(context).primaryColor;
           },
         ),
         foregroundColor: MaterialStateProperty.resolveWith<Color>(
           (Set<MaterialState> states) {
             if (states.contains(MaterialState.disabled)) {
-              return Colors.black; // Text color for disabled state
+              return Colors.black;
             }
-            return Colors.white; // Text color for enabled state
+            return Colors.white;
           },
+        ),
+        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+                isRounded ? 20.0 : 0.0), // Atur radius berdasarkan isRounded
+          ),
         ),
       ),
       child: Text(label),
