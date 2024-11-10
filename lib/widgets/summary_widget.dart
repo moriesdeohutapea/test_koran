@@ -59,52 +59,88 @@ class _SummaryWidgetState extends State<SummaryWidget> {
             ? const Center(
                 child:
                     CustomText(text: 'No test data available.', fontSize: 16))
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildSummaryCard(
-                    title: 'Total Correct Answers',
-                    value: _summaryData!.totalCorrect.toString(),
+            : Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: LinearGradient(
+                    colors: [Colors.blueAccent, Colors.lightBlueAccent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  _buildSummaryCard(
-                    title: 'Total Wrong Answers',
-                    value: _summaryData!.totalWrong.toString(),
-                  ),
-                  _buildSummaryCard(
-                    title: 'Average Response Time',
-                    value:
-                        '${_summaryData!.averageResponseTime.toStringAsFixed(2)} seconds',
-                  ),
-                  _buildSummaryCard(
-                    title: 'Overall Accuracy',
-                    value:
-                        '${_summaryData!.overallAccuracy.toStringAsFixed(2)}%',
-                  ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blueAccent.withOpacity(0.3),
+                      spreadRadius: 4,
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildSummaryCard(
+                      title: 'Total Correct Answers',
+                      value: _summaryData!.totalCorrect.toString(),
+                      icon: Icons.check_circle_outline,
+                      color: Colors.green,
+                    ),
+                    _buildSummaryCard(
+                      title: 'Total Wrong Answers',
+                      value: _summaryData!.totalWrong.toString(),
+                      icon: Icons.cancel_outlined,
+                      color: Colors.red,
+                    ),
+                    _buildSummaryCard(
+                      title: 'Avg. Response Time',
+                      value:
+                          '${_summaryData!.averageResponseTime.toStringAsFixed(2)}s',
+                      icon: Icons.timer_outlined,
+                      color: Colors.orange,
+                    ),
+                    _buildSummaryCard(
+                      title: 'Overall Accuracy',
+                      value:
+                          '${_summaryData!.overallAccuracy.toStringAsFixed(2)}%',
+                      icon: Icons.insights_outlined,
+                      color: Colors.purple,
+                    ),
+                  ],
+                ),
               );
   }
 
-  Widget _buildSummaryCard({required String title, required String value}) {
+  Widget _buildSummaryCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CustomText(
-              text: title,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-            const SizedBox(height: 8),
-            CustomText(
-              text: value,
-              fontSize: 16,
-            ),
-          ],
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withOpacity(0.2),
+          ),
+          child: Icon(icon, color: color, size: 30),
+        ),
+        title: CustomText(
+          text: title,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        subtitle: CustomText(
+          text: value,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.black54,
         ),
       ),
     );

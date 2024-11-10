@@ -80,12 +80,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SummaryWidget(),
                         CustomText(
                           text: 'Selamat datang, $userName!',
                           fontSize: 21,
                           fontWeight: FontWeight.w600,
                         ),
+                        const SizedBox(height: 20),
+                        const SummaryWidget(),
                         const SizedBox(height: 20),
                         CustomButton(
                           label: 'Tes Koran',
