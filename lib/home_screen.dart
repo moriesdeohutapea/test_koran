@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_koran/second_screen.dart';
+import 'package:test_koran/widgets/summary_widget.dart';
 
 import 'auth_service.dart';
 import 'component/custom_button.dart';
@@ -79,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const SummaryWidget(),
                         CustomText(
                           text: 'Selamat datang, $userName!',
                           fontSize: 21,
