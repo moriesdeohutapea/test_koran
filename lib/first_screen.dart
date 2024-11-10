@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:test_koran/test_result_screen.dart';
 
 import 'auth_service.dart';
-import 'custom_button.dart';
+import 'component/custom_button.dart';
 import 'fire_store_service.dart';
 
 class TestScreen extends StatefulWidget {

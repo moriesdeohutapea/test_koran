@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:test_koran/test_result_screen.dart';
 
 import 'auth_service.dart';
-import 'custom_button.dart';
+import 'component/custom_button.dart';
 
 class OddEvenTestScreen extends StatefulWidget {
   const OddEvenTestScreen({super.key});
@@ -187,20 +187,24 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
                 );
               }).toList(),
             ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8)),
             CustomButton(
               label: "Riwayat Hasil",
               onPressed: _toScreenResult,
             ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8)),
             CustomButton(
               label: 'Start',
               onPressed: _startTimer,
               isEnabled: true,
             ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8)),
             CustomButton(
               label: 'Reset',
               onPressed: _resetTest,
               isEnabled: true,
             ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8)),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

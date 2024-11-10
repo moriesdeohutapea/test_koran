@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:test_koran/extension.dart';
+import 'package:test_koran/tier_screen.dart';
 
 import 'auth_service.dart';
+import 'component/text_view.dart';
+import 'model/data_model.dart';
 
 class TestResultsScreen extends StatefulWidget {
   final String collectionField;
@@ -44,27 +48,73 @@ class _TestResultsScreenState extends State<TestResultsScreen> {
     }
   }
 
+  void _navigateToTierScreen() {
+    if (_testResults.isNotEmpty) {
+      final tierData = _testResults.first;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TierScreen(
+            data: DataModel(
+              accuracy: (tierData['accuracy'] ?? 0).toInt(),
+              // Cast to int
+              averageResponseTime:
+                  (tierData['average_response_time'] ?? 0.0).toDouble(),
+              // Ensure it's a double
+              scoreCorrect: (tierData['score_correct'] ?? 0).toInt(),
+              // Cast to int
+              scoreWrong: (tierData['score_wrong'] ?? 0).toInt(),
+              // Cast to int
+              selectedTime: tierData['selected_time'] ?? 'N/A',
+              timestamp: DateTime.parse(tierData['timestamp']),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   Widget _buildTestResultItem(Map<String, dynamic> result) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: ListTile(
-        title: Text('Test pada ${result['timestamp']}'),
+        title: CustomText(
+          text: 'Test pada ${result['timestamp'].toString().toUserFriendlyDate()}',
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Benar: ${result['score_correct']}'),
-            Text('Salah: ${result['score_wrong']}'),
+            CustomText(text: 'Benar: ${result['score_correct']}'),
+            CustomText(text: 'Salah: ${result['score_wrong']}'),
             if (widget.collectionField == 'oddEvenTestResults') ...[
-              const Text('Jenis Tes: Ganjil/Genap'),
-              Text('Waktu rata-rata: ${result['average_response_time']} detik'),
-              Text('Akurasi: ${result['accuracy']}%'),
+              const CustomText(
+                text: 'Jenis Tes: Ganjil/Genap',
+                fontWeight: FontWeight.bold,
+              ),
+              CustomText(
+                text:
+                    'Waktu rata-rata: ${result['average_response_time'].toString().roundToDecimals(3)} detik',
+              ),
+              CustomText(
+                text: 'Akurasi: ${result['accuracy']}%',
+              ),
             ] else if (widget.collectionField == 'testResults') ...[
-              const Text('Jenis Tes: Tes Koran'),
+              const CustomText(
+                text: 'Jenis Tes: Tes Koran',
+                fontWeight: FontWeight.bold,
+              ),
               if (result.containsKey('average_response_time'))
-                Text(
-                    'Waktu rata-rata: ${result['average_response_time']} detik'),
+                CustomText(
+                  text:
+                      'Waktu rata-rata: ${result['average_response_time'].toString().roundToDecimals(3)} detik',
+                ),
               if (result.containsKey('accuracy'))
-                Text('Akurasi: ${result['accuracy']}%'),
+                CustomText(
+                  text: 'Akurasi: ${result['accuracy']}%',
+                ),
             ],
           ],
         ),
@@ -75,11 +125,26 @@ class _TestResultsScreenState extends State<TestResultsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Riwayat Tes')),
+      appBar: AppBar(
+        title: const CustomText(
+          text: 'Riwayat Tes',
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            onPressed: _navigateToTierScreen,
+            tooltip: 'Lihat Tiering',
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _testResults.isEmpty
-              ? const Center(child: Text('Tidak ada riwayat tes ditemukan.'))
+              ? const Center(
+                  child: CustomText(
+                      text: 'Tidak ada riwayat tes ditemukan.', fontSize: 16))
               : ListView.builder(
                   itemCount: _testResults.length,
                   itemBuilder: (context, index) {
