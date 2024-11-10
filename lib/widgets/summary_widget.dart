@@ -51,64 +51,80 @@ class _SummaryWidgetState extends State<SummaryWidget> {
     }
   }
 
+  Future<void> _refreshSummary() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await _fetchAndCalculateSummary();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _summaryData == null
-            ? const Center(
-                child:
-                    CustomText(text: 'No test data available.', fontSize: 16))
-            : Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  gradient: LinearGradient(
-                    colors: [Colors.blueAccent, Colors.lightBlueAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.blueAccent.withOpacity(0.3),
-                      spreadRadius: 4,
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+    return RefreshIndicator(
+      onRefresh: _refreshSummary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _summaryData == null
+                  ? const Center(
+                      child: CustomText(
+                          text: 'No test data available.', fontSize: 16))
+                  : Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        gradient: const LinearGradient(
+                          colors: [Colors.blueAccent, Colors.lightBlueAccent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent.withOpacity(0.3),
+                            spreadRadius: 4,
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSummaryCard(
+                            title: 'Total Correct Answers',
+                            value: _summaryData!.totalCorrect.toString(),
+                            icon: Icons.check_circle_outline,
+                            color: Colors.green,
+                          ),
+                          _buildSummaryCard(
+                            title: 'Total Wrong Answers',
+                            value: _summaryData!.totalWrong.toString(),
+                            icon: Icons.cancel_outlined,
+                            color: Colors.red,
+                          ),
+                          _buildSummaryCard(
+                            title: 'Avg. Response Time',
+                            value:
+                                '${_summaryData!.averageResponseTime.toStringAsFixed(2)}s',
+                            icon: Icons.timer_outlined,
+                            color: Colors.orange,
+                          ),
+                          _buildSummaryCard(
+                            title: 'Overall Accuracy',
+                            value:
+                                '${_summaryData!.overallAccuracy.toStringAsFixed(2)}%',
+                            icon: Icons.insights_outlined,
+                            color: Colors.purple,
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildSummaryCard(
-                      title: 'Total Correct Answers',
-                      value: _summaryData!.totalCorrect.toString(),
-                      icon: Icons.check_circle_outline,
-                      color: Colors.green,
-                    ),
-                    _buildSummaryCard(
-                      title: 'Total Wrong Answers',
-                      value: _summaryData!.totalWrong.toString(),
-                      icon: Icons.cancel_outlined,
-                      color: Colors.red,
-                    ),
-                    _buildSummaryCard(
-                      title: 'Avg. Response Time',
-                      value:
-                          '${_summaryData!.averageResponseTime.toStringAsFixed(2)}s',
-                      icon: Icons.timer_outlined,
-                      color: Colors.orange,
-                    ),
-                    _buildSummaryCard(
-                      title: 'Overall Accuracy',
-                      value:
-                          '${_summaryData!.overallAccuracy.toStringAsFixed(2)}%',
-                      icon: Icons.insights_outlined,
-                      color: Colors.purple,
-                    ),
-                  ],
-                ),
-              );
+        ),
+      ),
+    );
   }
 
   Widget _buildSummaryCard({
