@@ -3,15 +3,21 @@ import 'package:flutter/material.dart';
 class PasswordTextField extends StatefulWidget {
   final TextEditingController controller;
   final String labelText;
-  final MaterialColor fillColor; // Changed to MaterialColor
+  final MaterialColor fillColor;
   final Color iconColor;
+  final IconData visibleIcon; // Icon for visible state
+  final IconData hiddenIcon; // Icon for hidden state
+  final int? maxLength; // Opsi max length yang baru ditambahkan
 
   const PasswordTextField({
     super.key,
     required this.controller,
     this.labelText = 'Password',
-    this.fillColor = Colors.grey, // Use MaterialColor for shades
+    this.fillColor = Colors.grey,
     this.iconColor = Colors.grey,
+    this.visibleIcon = Icons.visibility, // Default visible icon
+    this.hiddenIcon = Icons.visibility_off, // Default hidden icon
+    this.maxLength, // Tambahkan maxLength di konstruktor
   });
 
   @override
@@ -26,6 +32,8 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
     return TextFormField(
       controller: widget.controller,
       obscureText: _isObscured,
+      maxLength: widget.maxLength,
+      // Terapkan maxLength pada TextFormField
       decoration: InputDecoration(
         labelText: widget.labelText,
         labelStyle: TextStyle(color: Colors.grey[700]),
@@ -43,7 +51,7 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
         ),
         suffixIcon: IconButton(
           icon: Icon(
-            _isObscured ? Icons.visibility_off : Icons.visibility,
+            _isObscured ? widget.hiddenIcon : widget.visibleIcon,
             color: widget.iconColor,
           ),
           onPressed: () {
@@ -52,6 +60,7 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
             });
           },
         ),
+        counterText: '', // Hapus teks penghitung di bawah text field
       ),
       style: const TextStyle(
         fontSize: 16,
@@ -69,6 +78,7 @@ class CustomTextField extends StatelessWidget {
   final IconData? icon;
   final Color fillColor;
   final Color iconColor;
+  final int? maxLength; // Opsi max length yang baru ditambahkan
 
   const CustomTextField({
     super.key,
@@ -79,6 +89,7 @@ class CustomTextField extends StatelessWidget {
     this.icon,
     this.fillColor = Colors.white,
     this.iconColor = Colors.grey,
+    this.maxLength, // Tambahkan maxLength di konstruktor
   });
 
   @override
@@ -87,6 +98,8 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: isPassword,
+      maxLength: maxLength,
+      // Terapkan maxLength pada TextFormField
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: TextStyle(
@@ -107,8 +120,9 @@ class CustomTextField extends StatelessWidget {
         prefixIcon: icon != null ? Icon(icon, color: iconColor) : null,
         contentPadding:
             const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+        counterText: '', // Hapus teks penghitung di bawah text field
       ),
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 16,
         color: Colors.black87,
       ),

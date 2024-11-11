@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'auth_service.dart';
-import 'component/input_text.dart';
-import 'component/text_view.dart';
-import 'component/custom_button.dart';
+import '../service/auth_service.dart';
+import '../component/custom_button.dart';
+import '../component/input_text.dart';
+import '../component/text_view.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -47,7 +47,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() {
-      _isFormValid = isEmailValid && isPasswordValid && isNameValid && isAgeValid;
+      _isFormValid =
+          isEmailValid && isPasswordValid && isNameValid && isAgeValid;
     });
   }
 
@@ -82,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: CustomText(
           text: _isLoginMode ? 'Login' : 'Register',
@@ -93,11 +95,11 @@ class _LoginScreenState extends State<LoginScreen> {
         child: _isLoading
             ? const CircularProgressIndicator()
             : Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!_isLoginMode)
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!_isLoginMode)
                       CustomTextField(
                         controller: _nameController,
                         labelText: 'Nama',
@@ -121,15 +123,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.number,
                         icon: Icons.cake,
                         fillColor: Colors.grey[200]!,
+                        maxLength: 2,
                       ),
                     if (!_isLoginMode) const SizedBox(height: 20),
-                    CustomTextField(
+                    PasswordTextField(
                       controller: _passwordController,
                       labelText: 'Password',
-                      isPassword: true,
-                      icon: Icons.lock,
-                      fillColor: Colors.grey[200]!,
+                      visibleIcon: Icons.lock,
                       iconColor: Colors.redAccent,
+                      maxLength: 10,
                     ),
                     const SizedBox(height: 20),
                     CustomButton(
@@ -139,12 +141,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
                     TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isLoginMode = !_isLoginMode;
-                    _validateForm();
-                  });
-                },
+                      onPressed: () {
+                        setState(() {
+                          _isLoginMode = !_isLoginMode;
+                          _validateForm();
+                        });
+                      },
                       child: CustomText(
                         text: _isLoginMode
                             ? "Belum punya akun? Register"

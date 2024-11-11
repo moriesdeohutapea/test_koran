@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:test_koran/second_screen.dart';
+import 'package:test_koran/ui/second_screen.dart';
 import 'package:test_koran/widgets/summary_widget.dart';
 
-import 'auth_service.dart';
-import 'component/custom_button.dart';
-import 'component/text_view.dart';
+import '../service/auth_service.dart';
+import '../component/custom_button.dart';
+import '../component/text_view.dart';
 import 'first_screen.dart';
 import 'login_screen.dart';
 
@@ -47,7 +47,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const CustomText(
           text: 'Pilih Tes',
           fontSize: 20,
@@ -94,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const TestScreen(),
+                                builder: (context) => const TestOneScreen(),
                               ),
                             );
                           },

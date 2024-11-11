@@ -4,20 +4,21 @@ import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:test_koran/test_result_screen.dart';
+import 'package:test_koran/ui/test_result_screen.dart';
 
-import 'auth_service.dart';
-import 'component/custom_button.dart';
-import 'fire_store_service.dart';
+import '../component/text_view.dart';
+import '../service/auth_service.dart';
+import '../component/custom_button.dart';
+import '../service/fire_store_service.dart';
 
-class TestScreen extends StatefulWidget {
-  const TestScreen({super.key});
+class TestOneScreen extends StatefulWidget {
+  const TestOneScreen({super.key});
 
   @override
-  _TestScreenState createState() => _TestScreenState();
+  _TestOneScreenState createState() => _TestOneScreenState();
 }
 
-class _TestScreenState extends State<TestScreen> {
+class _TestOneScreenState extends State<TestOneScreen> {
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
   final AuthService _authService = AuthService();
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -156,9 +157,10 @@ class _TestScreenState extends State<TestScreen> {
   void _showTestResultsDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Time’s Up!'),
-        content: Text(
+        title: const CustomText(text: 'Time’s Up!'),
+        content: CustomText(text:
           'Correct: $_scoreCorrect\n'
           'Wrong: $_scoreWrong\n'
           'Average Response Time: ${_calculateAverageResponseTime().toStringAsFixed(2)} seconds\n'
@@ -170,7 +172,7 @@ class _TestScreenState extends State<TestScreen> {
               Navigator.of(context).pop();
               _resetTest();
             },
-            child: const Text('Try Again'),
+            child: const CustomText(text: "Oke",),
           ),
         ],
       ),
@@ -198,24 +200,35 @@ class _TestScreenState extends State<TestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Number Test')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const CustomText(
+          text: 'Number Test',
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                  const TestResultsScreen(collectionField: 'testResults'),
+                ),
+              );
+            },
+          ),
+        ],
+      )
+      ,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CustomButton(
-              label: "Riwayat Hasil",
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const TestResultsScreen(collectionField: 'testResults'),
-                  ),
-                );
-              },
-            ),
             DropdownButton<String>(
               value: _selectedTime,
               onChanged: (String? newValue) {
@@ -230,15 +243,18 @@ class _TestScreenState extends State<TestScreen> {
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value),
+                  child: CustomText(text: value), // CustomText used here
                 );
               }).toList(),
             ),
             const SizedBox(height: 20),
-            Text(_currentQuestion, style: const TextStyle(fontSize: 24)),
+            CustomText(text: _currentQuestion, fontSize: 36, fontWeight: FontWeight.w600,),
+            // CustomText used here
             const SizedBox(height: 20),
-            Text('Time: $_remainingTime seconds',
-                style: const TextStyle(fontSize: 18)),
+            CustomText(
+              text: 'Time: $_remainingTime seconds', // CustomText used here
+              fontSize: 18,
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -277,10 +293,14 @@ class _TestScreenState extends State<TestScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Text('Correct: $_scoreCorrect',
-                    style: const TextStyle(fontSize: 18)),
-                Text('Wrong: $_scoreWrong',
-                    style: const TextStyle(fontSize: 18)),
+                CustomText(
+                  text: 'Correct: $_scoreCorrect', // CustomText used here
+                  fontSize: 18,
+                ),
+                CustomText(
+                  text: 'Wrong: $_scoreWrong', // CustomText used here
+                  fontSize: 18,
+                ),
               ],
             ),
           ],

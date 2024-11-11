@@ -3,10 +3,11 @@ import 'dart:math';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:test_koran/test_result_screen.dart';
+import 'package:test_koran/ui/test_result_screen.dart';
 
-import 'auth_service.dart';
-import 'component/custom_button.dart';
+import '../component/text_view.dart';
+import '../service/auth_service.dart';
+import '../component/custom_button.dart';
 
 class OddEvenTestScreen extends StatefulWidget {
   const OddEvenTestScreen({super.key});
@@ -51,9 +52,10 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Waktu Habis!'),
-        content: Text(
+        title: const CustomText(text: 'Waktu Habis!'),
+        content: CustomText(text:
           'Benar: $_scoreBenar\n'
           'Salah: $_scoreSalah\n'
           'Average Response Time: ${_calculateAverageResponseTime().toStringAsFixed(2)} detik\n'
@@ -65,7 +67,7 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
               Navigator.of(context).pop();
               _resetTest();
             },
-            child: const Text('Mulai Lagi'),
+            child: const CustomText(text: "Oke",),
           ),
         ],
       ),
@@ -169,7 +171,20 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tes Ganjil/Genap')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const CustomText(
+            text: 'Tes Ganjil/Genap',
+            fontSize: 20,
+            fontWeight: FontWeight.bold),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: _toScreenResult,
+            ),
+          ]
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -183,14 +198,9 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value),
+                  child: CustomText(text: value), // Using CustomText here
                 );
               }).toList(),
-            ),
-            const Padding(padding: EdgeInsets.symmetric(vertical: 8)),
-            CustomButton(
-              label: "Riwayat Hasil",
-              onPressed: _toScreenResult,
             ),
             const Padding(padding: EdgeInsets.symmetric(vertical: 8)),
             CustomButton(
@@ -209,14 +219,17 @@ class _OddEvenTestScreenState extends State<OddEvenTestScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    _currentQuestion,
-                    style: const TextStyle(fontSize: 24),
+                  CustomText(
+                    text: _currentQuestion,
+                    fontSize: 36,
                     textAlign: TextAlign.center,
+                    fontWeight: FontWeight.w600,
                   ),
                   const SizedBox(height: 20),
-                  Text('Waktu: $_remainingTime detik',
-                      style: const TextStyle(fontSize: 18)),
+                  CustomText(
+                    text: 'Waktu: $_remainingTime detik',
+                    fontSize: 18,
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     children: [

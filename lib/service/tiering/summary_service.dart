@@ -1,4 +1,4 @@
-import '../model/data_model.dart';
+import '../../model/data_model.dart';
 
 class SummaryService {
   SummaryDataModel calculateSummary(List<Map<String, dynamic>> testResults) {

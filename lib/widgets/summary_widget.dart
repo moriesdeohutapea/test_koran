@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import '../auth_service.dart';
+import '../service/auth_service.dart';
 import '../component/text_view.dart';
 import '../model/data_model.dart';
-import '../service/summary_service.dart';
+import '../service/tiering/summary_service.dart';
 
 class SummaryWidget extends StatefulWidget {
   const SummaryWidget({super.key});

@@ -15,10 +15,13 @@ dependencies:
   google_sign_in: ^6.2.2
   firebase_analytics: ^11.3.4
   cloud_firestore: ^5.4.5
-
   shared_preferences: ^2.0.0
   audioplayers: ^6.1.0
+  syncfusion_flutter_charts: ^20.3.47
+  screenshot: ^3.0.0
   intl: ^0.17.0
+  win32: ^5.5.3
+  share_plus: ^10.1.2
 
 dev_dependencies:
   flutter_test:
